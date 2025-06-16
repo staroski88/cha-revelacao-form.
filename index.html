@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Confirmação Chá Revelação</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2em; background: #f8f0ff; }
+    label { display: block; margin-top: 1em; }
+    select, input[type="text"] { padding: 0.5em; width: 100%; max-width: 300px; }
+    button { margin-top: 1em; padding: 0.7em 1.2em; font-size: 16px; }
+    .disabled { color: gray; }
+  </style>
+</head>
+<body>
+  <h2>Confirmação de Presença - Chá Revelação</h2>
+
+  <form id="form">
+    <label for="nome">Seu Nome:</label>
+    <input type="text" id="nome" name="nome" required>
+
+    <label for="fralda">Qual tamanho de fralda você levará?</label>
+    <select id="fralda" name="fralda" required>
+      <option value="">Escolha...</option>
+      <option value="RN">RN</option>
+      <option value="P">P</option>
+      <option value="M">M</option>
+      <option value="G">G</option>
+      <option value="XG">XG</option>
+    </select>
+
+    <button type="submit">Confirmar Presença</button>
+  </form>
+
+  <p id="status"></p>
+
+  <script>
+    const form = document.getElementById('form');
+    const fraldaSelect = document.getElementById('fralda');
+    const status = document.getElementById('status');
+
+    const scriptURL = 'COLE_AQUI_A_URL_DO_SEU_WEB_APP'; // Troque isso pela URL do seu Apps Script
+
+    async function carregarContagem() {
+      const response = await fetch(scriptURL);
+      const data = await response.json();
+
+      for (const tamanho of ['RN', 'P', 'M', 'G', 'XG']) {
+        const option = Array.from(fraldaSelect.options).find(opt => opt.value === tamanho);
+        if (data[tamanho] >= 10) {
+          option.disabled = true;
+          option.textContent = `${tamanho} (Esgotado)`;
+        } else {
+          option.textContent = `${tamanho} (${data[tamanho]}/10)`;
+        }
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nome = document.getElementById('nome').value.trim();
+      const fralda = fraldaSelect.value;
+
+      if (!nome || !fralda) return;
+
+      const res = await fetch(scriptURL, {
+        method: 'POST',
+        body: JSON.stringify({ nome, fralda }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const result = await res.json();
+      if (result.status === "success") {
+        status.textContent = "Confirmação enviada com sucesso!";
+        form.reset();
+        carregarContagem();
+      } else {
+        status.textContent = "Erro ao enviar. Tente novamente.";
+      }
+    });
+
+    window.onload = carregarContagem;
+  </script>
+</body>
+</html>
